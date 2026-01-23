@@ -1,0 +1,54 @@
+{
+  "name": "Griptape Nodes Depth Anything 3 Library",
+  "library_schema_version": "0.3.0",
+  "advanced_library_path": "depth_anything_3_library_advanced.py",
+  "metadata": {
+    "author": "Griptape, Inc.",
+    "description": "Depth Anything 3 depth estimation for Griptape Nodes.",
+    "library_version": "0.1.0",
+    "engine_version": "0.66.2",
+    "tags": ["Griptape", "AI", "Depth", "Vision", "3D"],
+    "dependencies": {
+      "pip_dependencies": [
+        "pygit2",
+        "xformers",
+        "torch>=2,<2.9",
+        "torchvision<0.24",
+        "numpy",
+        "pillow",
+        "einops",
+        "timm"
+      ],
+      "pip_install_flags": [
+        "--extra-index-url",
+        "https://download.pytorch.org/whl/cu128"
+      ]
+    },
+    "resources": {
+      "required": {
+        "compute": [["cuda", "mps"], "has_any"]
+      }
+    }
+  },
+  "categories": [
+    {
+      "depth/estimation": {
+        "color": "border-blue-500",
+        "title": "Depth/Estimation",
+        "description": "Depth estimation nodes",
+        "icon": "layers"
+      }
+    }
+  ],
+  "nodes": [
+    {
+      "class_name": "DepthAnythingNode",
+      "file_path": "depth_anything_node.py",
+      "metadata": {
+        "category": "depth/estimation",
+        "description": "Estimate depth from images using Depth Anything 3 models.",
+        "display_name": "Depth Anything 3"
+      }
+    }
+  ]
+}

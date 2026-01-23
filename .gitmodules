@@ -1,0 +1,3 @@
+[submodule "griptape_nodes_depth_anything_3_library/depth-anything-3"]
+	path = griptape_nodes_depth_anything_3_library/depth-anything-3
+	url = https://github.com/ByteDance-Seed/depth-anything-3.git
