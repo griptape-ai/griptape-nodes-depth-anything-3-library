@@ -10,16 +10,16 @@ from PIL import Image
 from griptape.artifacts import ImageArtifact
 from griptape_nodes.exe_types.core_types import Parameter, ParameterMode
 from griptape_nodes.exe_types.node_types import SuccessFailureNode
-from griptape_nodes.traits.options import Options
+from griptape_nodes.exe_types.param_components.huggingface.huggingface_repo_parameter import HuggingFaceRepoParameter
 
 logger = logging.getLogger("depth_anything_3_library")
 
-MODEL_CHOICES = [
-    "da3-large",
-    "da3-giant",
-    "da3-base",
-    "da3-small",
-]
+MODEL_NAME_MAP = {
+    "depth-anything/DA3-LARGE-1.1": "da3-large",
+    "depth-anything/DA3-GIANT-1.1": "da3-giant",
+    "depth-anything/DA3-BASE": "da3-base",
+    "depth-anything/DA3-SMALL": "da3-small",
+}
 
 
 class DepthAnythingNode(SuccessFailureNode):
@@ -31,16 +31,12 @@ class DepthAnythingNode(SuccessFailureNode):
     def __init__(self, **kwargs) -> None:
         super().__init__(**kwargs)
 
-        self.add_parameter(
-            Parameter(
-                name="model",
-                allowed_modes={ParameterMode.INPUT, ParameterMode.PROPERTY},
-                type="str",
-                default_value="da3-large",
-                tooltip="Model variant to use for depth estimation.",
-                traits={Options(choices=MODEL_CHOICES)},
-            )
+        self._model_repo_parameter = HuggingFaceRepoParameter(
+            self,
+            repo_ids=list(MODEL_NAME_MAP.keys()),
+            parameter_name="model",
         )
+        self._model_repo_parameter.add_input_parameters()
 
         self.add_parameter(
             Parameter(
@@ -77,6 +73,10 @@ class DepthAnythingNode(SuccessFailureNode):
             result_details_tooltip="Details about the depth estimation result",
             result_details_placeholder="Depth estimation result details will appear here.",
         )
+
+    def validate_before_node_run(self) -> list[Exception] | None:
+        """Validate that the HuggingFace model is available."""
+        return self._model_repo_parameter.validate_before_node_run()
 
     def _get_device(self) -> str:
         """Get the appropriate device for inference."""
@@ -148,7 +148,7 @@ class DepthAnythingNode(SuccessFailureNode):
     async def _process(self) -> None:
         self._clear_execution_status()
 
-        model_name = self.get_parameter_value("model")
+        model_repo_id = self.get_parameter_value("model")
         image_artifact = self.get_parameter_value("image")
 
         if image_artifact is None:
@@ -158,8 +158,10 @@ class DepthAnythingNode(SuccessFailureNode):
             )
             return
 
+        model_name = MODEL_NAME_MAP.get(model_repo_id, "da3-large")
+
         try:
-            self.status_component.append_to_result_details(f"Loading model: {model_name}")
+            self.status_component.append_to_result_details(f"Loading model: {model_repo_id}")
             self._load_model(model_name)
 
             model = DepthAnythingNode._model
