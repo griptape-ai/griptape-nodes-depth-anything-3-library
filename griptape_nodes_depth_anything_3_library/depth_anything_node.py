@@ -1,25 +1,30 @@
 import io
 import logging
 import tempfile
+import uuid
 from pathlib import Path
 
 import numpy as np
+import requests
 import torch
 from PIL import Image
 
-from griptape.artifacts import ImageArtifact
+from griptape.artifacts import ImageArtifact, ImageUrlArtifact
+from griptape_nodes.retained_mode.griptape_nodes import GriptapeNodes
 from griptape_nodes.exe_types.core_types import Parameter, ParameterMode
 from griptape_nodes.exe_types.node_types import SuccessFailureNode
 from griptape_nodes.exe_types.param_components.huggingface.huggingface_repo_parameter import HuggingFaceRepoParameter
 
 logger = logging.getLogger("depth_anything_3_library")
 
-MODEL_NAME_MAP = {
-    "depth-anything/DA3-LARGE-1.1": "da3-large",
-    "depth-anything/DA3-GIANT-1.1": "da3-giant",
-    "depth-anything/DA3-BASE": "da3-base",
-    "depth-anything/DA3-SMALL": "da3-small",
-}
+AVAILABLE_MODELS = [
+    "depth-anything/DA3-LARGE-1.1",
+    "depth-anything/DA3-GIANT-1.1",
+    "depth-anything/DA3-LARGE",
+    "depth-anything/DA3-GIANT",
+    "depth-anything/DA3-BASE",
+    "depth-anything/DA3-SMALL",
+]
 
 
 class DepthAnythingNode(SuccessFailureNode):
@@ -33,7 +38,7 @@ class DepthAnythingNode(SuccessFailureNode):
 
         self._model_repo_parameter = HuggingFaceRepoParameter(
             self,
-            repo_ids=list(MODEL_NAME_MAP.keys()),
+            repo_ids=AVAILABLE_MODELS,
             parameter_name="model",
         )
         self._model_repo_parameter.add_input_parameters()
@@ -43,7 +48,7 @@ class DepthAnythingNode(SuccessFailureNode):
                 name="image",
                 allowed_modes={ParameterMode.INPUT},
                 type="ImageArtifact",
-                input_types=["ImageArtifact"],
+                input_types=["ImageArtifact", "ImageUrlArtifact"],
                 default_value=None,
                 tooltip="Input image for depth estimation.",
             )
@@ -86,45 +91,55 @@ class DepthAnythingNode(SuccessFailureNode):
             return "mps"
         return "cpu"
 
-    def _load_model(self, model_name: str) -> None:
-        """Load the Depth Anything 3 model."""
+    def _load_model(self, model_id: str) -> None:
+        """Load the Depth Anything 3 model from HuggingFace Hub."""
+        import safetensors  # noqa: F401 - needed for huggingface_hub bug workaround
+
         from depth_anything_3.api import DepthAnything3
 
-        if DepthAnythingNode._model is not None and DepthAnythingNode._current_model_name == model_name:
-            logger.info(f"Using cached model: {model_name}")
+        if DepthAnythingNode._model is not None and DepthAnythingNode._current_model_name == model_id:
+            logger.info(f"Using cached model: {model_id}")
             return
 
-        logger.info(f"Loading Depth Anything 3 model: {model_name}")
-        device = self._get_device()
+        logger.info(f"Loading Depth Anything 3 model: {model_id}")
+        device = torch.device(self._get_device())
 
-        DepthAnythingNode._model = DepthAnything3(model_name=model_name)
-        DepthAnythingNode._model = DepthAnythingNode._model.eval().to(device)
-        DepthAnythingNode._current_model_name = model_name
+        DepthAnythingNode._model = DepthAnything3.from_pretrained(model_id)
+        DepthAnythingNode._model = DepthAnythingNode._model.to(device=device)
+        DepthAnythingNode._current_model_name = model_id
 
         logger.info(f"Model loaded on device: {device}")
 
-    def _image_artifact_to_pil(self, artifact: ImageArtifact) -> Image.Image:
-        """Convert an ImageArtifact to a PIL Image."""
-        buffer = io.BytesIO(artifact.value)
-        return Image.open(buffer).convert("RGB")
+    def _image_artifact_to_pil(self, artifact: ImageArtifact | ImageUrlArtifact) -> Image.Image:
+        """Convert an ImageArtifact or ImageUrlArtifact to a PIL Image."""
+        if isinstance(artifact, ImageUrlArtifact):
+            response = requests.get(artifact.value)
+            return Image.open(io.BytesIO(response.content)).convert("RGB")
+        return Image.open(io.BytesIO(artifact.value)).convert("RGB")
 
-    def _depth_to_grayscale_artifact(self, depth: np.ndarray, original_size: tuple[int, int]) -> ImageArtifact:
-        """Convert depth array to grayscale ImageArtifact."""
+    def _pil_to_artifact(self, pil_image: Image.Image, prefix: str = "depth") -> ImageUrlArtifact:
+        """Convert a PIL Image to an ImageUrlArtifact using StaticFilesManager."""
+        buffer = io.BytesIO()
+        pil_image.save(buffer, format="PNG")
+        buffer.seek(0)
+        image_bytes = buffer.read()
+
+        filename = f"{prefix}_{uuid.uuid4().hex[:8]}.png"
+        url = GriptapeNodes.StaticFilesManager().save_static_file(image_bytes, filename)
+
+        return ImageUrlArtifact(value=url)
+
+    def _depth_to_grayscale_pil(self, depth: np.ndarray, original_size: tuple[int, int]) -> Image.Image:
+        """Convert depth array to grayscale PIL Image."""
         depth_normalized = (depth - depth.min()) / (depth.max() - depth.min() + 1e-8)
         depth_inverted = 1.0 - depth_normalized
         depth_uint8 = (depth_inverted * 255).astype(np.uint8)
 
         depth_image = Image.fromarray(depth_uint8, mode="L")
-        depth_image = depth_image.resize(original_size, Image.Resampling.LANCZOS)
+        return depth_image.resize(original_size, Image.Resampling.LANCZOS)
 
-        buffer = io.BytesIO()
-        depth_image.save(buffer, format="PNG")
-        buffer.seek(0)
-
-        return ImageArtifact(value=buffer.read(), format="png", width=original_size[0], height=original_size[1])
-
-    def _depth_to_colorized_artifact(self, depth: np.ndarray, original_size: tuple[int, int]) -> ImageArtifact:
-        """Convert depth array to colorized ImageArtifact using a colormap."""
+    def _depth_to_colorized_pil(self, depth: np.ndarray, original_size: tuple[int, int]) -> Image.Image:
+        """Convert depth array to colorized PIL Image using a colormap."""
         import cv2
 
         depth_normalized = (depth - depth.min()) / (depth.max() - depth.min() + 1e-8)
@@ -134,13 +149,7 @@ class DepthAnythingNode(SuccessFailureNode):
         depth_colored_rgb = cv2.cvtColor(depth_colored, cv2.COLOR_BGR2RGB)
 
         depth_image = Image.fromarray(depth_colored_rgb)
-        depth_image = depth_image.resize(original_size, Image.Resampling.LANCZOS)
-
-        buffer = io.BytesIO()
-        depth_image.save(buffer, format="PNG")
-        buffer.seek(0)
-
-        return ImageArtifact(value=buffer.read(), format="png", width=original_size[0], height=original_size[1])
+        return depth_image.resize(original_size, Image.Resampling.LANCZOS)
 
     async def aprocess(self) -> None:
         await self._process()
@@ -158,11 +167,9 @@ class DepthAnythingNode(SuccessFailureNode):
             )
             return
 
-        model_name = MODEL_NAME_MAP.get(model_repo_id, "da3-large")
-
         try:
             self.status_component.append_to_result_details(f"Loading model: {model_repo_id}")
-            self._load_model(model_name)
+            self._load_model(model_repo_id)
 
             model = DepthAnythingNode._model
 
@@ -184,9 +191,14 @@ class DepthAnythingNode(SuccessFailureNode):
 
             depth = prediction.depth[0]
 
-            depth_artifact = self._depth_to_grayscale_artifact(depth, original_size)
-            depth_colorized_artifact = self._depth_to_colorized_artifact(depth, original_size)
+            depth_pil = self._depth_to_grayscale_pil(depth, original_size)
+            depth_colorized_pil = self._depth_to_colorized_pil(depth, original_size)
 
+            depth_artifact = self._pil_to_artifact(depth_pil, "depth")
+            depth_colorized_artifact = self._pil_to_artifact(depth_colorized_pil, "depth_colorized")
+
+            self.set_parameter_value("depth", depth_artifact)
+            self.set_parameter_value("depth_colorized", depth_colorized_artifact)
             self.parameter_output_values["depth"] = depth_artifact
             self.parameter_output_values["depth_colorized"] = depth_colorized_artifact
 

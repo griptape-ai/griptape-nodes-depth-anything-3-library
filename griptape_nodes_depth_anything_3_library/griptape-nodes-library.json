@@ -11,13 +11,8 @@
     "dependencies": {
       "pip_dependencies": [
         "pygit2",
-        "xformers",
-        "torch>=2,<2.9",
-        "torchvision<0.24",
-        "numpy",
-        "pillow",
-        "einops",
-        "timm"
+        "torch>=2",
+        "torchvision"
       ],
       "pip_install_flags": [
         "--extra-index-url",

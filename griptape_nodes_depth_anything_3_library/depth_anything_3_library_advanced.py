@@ -1,3 +1,4 @@
+import importlib.metadata
 import logging
 import subprocess
 import sys
@@ -10,6 +11,35 @@ from griptape_nodes.node_library.library_registry import Library, LibrarySchema
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger("depth_anything_3_library")
+
+
+def _clear_cached_modules() -> None:
+    """Clear cached modules to ensure library venv packages are used."""
+    # Clear importlib.metadata cache
+    try:
+        if hasattr(importlib.metadata, "_adapters"):
+            importlib.metadata._adapters.wrap_mtime_invalidator.cache_clear()
+        sys.path_importer_cache.clear()
+    except Exception as e:
+        logger.warning(f"Could not clear importlib.metadata cache: {e}")
+
+    # Modules that need to be re-imported from library venv
+    # Note: Do NOT clear importlib.* modules - they are core Python modules
+    prefixes_to_clear = [
+        "huggingface_hub",
+        "safetensors",
+        "transformers",
+    ]
+
+    modules_to_clear = [
+        module_name
+        for module_name in list(sys.modules.keys())
+        if any(module_name == prefix or module_name.startswith(f"{prefix}.") for prefix in prefixes_to_clear)
+    ]
+
+    for module_name in modules_to_clear:
+        del sys.modules[module_name]
+        logger.debug(f"Cleared cached module: {module_name}")
 
 
 def _get_library_venv_python() -> Path:
@@ -29,6 +59,9 @@ class DepthAnything3LibraryAdvanced(AdvancedNodeLibrary):
         """Called before any nodes are loaded from the library."""
         msg = f"Starting to load nodes for '{library_data.name}' library..."
         logger.info(msg)
+
+        # Clear cached modules to ensure library venv packages are used
+        _clear_cached_modules()
 
         logger.info("Initializing depth-anything-3 submodule...")
         depth_anything_path = self._init_depth_anything_submodule()
@@ -121,7 +154,6 @@ class DepthAnything3LibraryAdvanced(AdvancedNodeLibrary):
         logger.info(f"Installing depth_anything_3 from {depth_anything_path}...")
         subprocess.check_call([
             str(venv_python), "-m", "pip", "install",
-            "--no-deps",
             str(depth_anything_path)
         ])
         logger.info("depth_anything_3 installed successfully")
