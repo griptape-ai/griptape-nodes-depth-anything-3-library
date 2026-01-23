@@ -25,9 +25,9 @@ def _clear_cached_modules() -> None:
 
     # Modules that need to be re-imported from library venv
     # Note: Do NOT clear importlib.* modules - they are core Python modules
+    # Note: Do NOT clear safetensors - it's a PyO3/Rust extension that cannot be reinitialized
     prefixes_to_clear = [
         "huggingface_hub",
-        "safetensors",
         "transformers",
     ]
 

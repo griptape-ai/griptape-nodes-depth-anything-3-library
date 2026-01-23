@@ -12,7 +12,8 @@
       "pip_dependencies": [
         "pygit2",
         "torch>=2",
-        "torchvision"
+        "torchvision",
+        "addict"
       ],
       "pip_install_flags": [
         "--extra-index-url",
@@ -37,12 +38,21 @@
   ],
   "nodes": [
     {
-      "class_name": "DepthAnythingNode",
-      "file_path": "depth_anything_node.py",
+      "class_name": "DepthAnything3Image",
+      "file_path": "da3/image_node.py",
       "metadata": {
         "category": "depth/estimation",
         "description": "Estimate depth from images using Depth Anything 3 models.",
-        "display_name": "Depth Anything 3"
+        "display_name": "Depth Anything 3 Image"
+      }
+    },
+    {
+      "class_name": "DepthAnything3Video",
+      "file_path": "da3/video_node.py",
+      "metadata": {
+        "category": "depth/estimation",
+        "description": "Estimate depth from videos using Depth Anything 3 models.",
+        "display_name": "Depth Anything 3 Video"
       }
     }
   ]
