@@ -12,6 +12,7 @@ from griptape.artifacts import VideoUrlArtifact
 from griptape_nodes.exe_types.core_types import Parameter, ParameterMode
 from griptape_nodes.exe_types.param_types.parameter_bool import ParameterBool
 from griptape_nodes.exe_types.node_types import AsyncResult, ControlNode
+from griptape_nodes.files.file import File, FileLoadError
 from griptape_nodes.retained_mode.griptape_nodes import GriptapeNodes
 from da3.parameters import DepthAnything3Parameters
 
@@ -85,7 +86,15 @@ class DepthAnything3Video(ControlNode):
             raise ValueError(msg)
 
         logger.info("Loading video frames...")
-        input_frames, fps = load_video_frames(input_video_artifact.value)
+        video_bytes = File(input_video_artifact.value).read_bytes()
+        with tempfile.NamedTemporaryFile(suffix=".mp4", delete=False) as temp_video_obj:
+            temp_video_path = Path(temp_video_obj.name)
+            temp_video_obj.write(video_bytes)
+        try:
+            input_frames, fps = load_video_frames(str(temp_video_path))
+        finally:
+            if temp_video_path.exists():
+                temp_video_path.unlink()
 
         if not input_frames:
             msg = "Could not load frames from input video"

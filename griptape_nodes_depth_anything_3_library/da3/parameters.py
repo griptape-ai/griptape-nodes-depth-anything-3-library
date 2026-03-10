@@ -5,7 +5,6 @@ import uuid
 from pathlib import Path
 
 import numpy as np
-import requests
 import torch
 from PIL import Image
 
@@ -13,6 +12,7 @@ from griptape.artifacts import ImageArtifact, ImageUrlArtifact
 from griptape_nodes.exe_types.node_types import BaseNode
 from griptape_nodes.exe_types.param_components.huggingface.huggingface_repo_parameter import HuggingFaceRepoParameter
 from griptape_nodes.retained_mode.griptape_nodes import GriptapeNodes
+from griptape_nodes.files.file import File, FileLoadError
 
 logger = logging.getLogger("depth_anything_3_library")
 
@@ -126,8 +126,8 @@ class DepthAnything3Parameters:
     def image_artifact_to_pil(artifact: ImageArtifact | ImageUrlArtifact) -> Image.Image:
         """Convert an ImageArtifact or ImageUrlArtifact to a PIL Image."""
         if isinstance(artifact, ImageUrlArtifact):
-            response = requests.get(artifact.value)
-            return Image.open(io.BytesIO(response.content)).convert("RGB")
+            image_bytes = File(artifact.value).read_bytes()
+            return Image.open(io.BytesIO(image_bytes)).convert("RGB")
         return Image.open(io.BytesIO(artifact.value)).convert("RGB")
 
     @staticmethod
