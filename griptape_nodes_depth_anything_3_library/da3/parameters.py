@@ -38,8 +38,6 @@ class DepthAnything3Parameters:
             repo_ids=AVAILABLE_MODELS,
             parameter_name="model",
         )
-        self._output_file = ProjectFileParameter(node=node, name="output_file", default_filename="depth_output.png")
-        self._output_file.add_parameter()
 
     def add_input_parameters(self) -> None:
         self._huggingface_repo_parameter.add_input_parameters()
@@ -131,14 +129,14 @@ class DepthAnything3Parameters:
             return Image.open(io.BytesIO(image_bytes)).convert("RGB")
         return Image.open(io.BytesIO(artifact.value)).convert("RGB")
 
-    def pil_to_image_artifact(self, pil_image: Image.Image, prefix: str = "depth") -> ImageUrlArtifact:
+    def pil_to_image_artifact(self, pil_image: Image.Image, output_file_param: ProjectFileParameter) -> ImageUrlArtifact:
         """Convert a PIL Image to an ImageUrlArtifact using ProjectFileParameter."""
         buffer = io.BytesIO()
         pil_image.save(buffer, format="PNG")
         buffer.seek(0)
         image_bytes = buffer.read()
 
-        saved = self._output_file.build_file().write_bytes(image_bytes)
+        saved = output_file_param.build_file().write_bytes(image_bytes)
 
         return ImageUrlArtifact(value=saved.location)
 

@@ -45,8 +45,6 @@ class DepthAnything3Video(ControlNode):
         super().__init__(**kwargs)
         self.params = DepthAnything3Parameters(self)
         self.params.add_input_parameters()
-        self._output_file = ProjectFileParameter(node=self, name="output_video", default_filename="depth_video.mp4")
-        self._output_file.add_parameter()
 
         self.add_parameter(
             Parameter(
@@ -71,6 +69,8 @@ class DepthAnything3Video(ControlNode):
                 allowed_modes={ParameterMode.OUTPUT},
             )
         )
+        self._output_file = ProjectFileParameter(node=self, name="output_video", default_filename="depth_video.mp4")
+        self._output_file.add_parameter()
 
     def validate_before_node_run(self) -> list[Exception] | None:
         return self.params.validate_before_node_run()
