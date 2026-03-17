@@ -5,6 +5,7 @@ from griptape.artifacts import ImageUrlArtifact
 from griptape_nodes.exe_types.core_types import Parameter, ParameterMode
 from griptape_nodes.exe_types.param_types.parameter_bool import ParameterBool
 from griptape_nodes.exe_types.node_types import AsyncResult, ControlNode
+from griptape_nodes.exe_types.param_components.project_file_parameter import ProjectFileParameter
 from da3.parameters import DepthAnything3Parameters
 
 logger = logging.getLogger("depth_anything_3_library")
@@ -41,6 +42,8 @@ class DepthAnything3Image(ControlNode):
                 allowed_modes={ParameterMode.OUTPUT},
             )
         )
+        self._output_file = ProjectFileParameter(node=self, name="output_file", default_filename="depth_output.png")
+        self._output_file.add_parameter()
 
     def validate_before_node_run(self) -> list[Exception] | None:
         return self.params.validate_before_node_run()
@@ -61,7 +64,7 @@ class DepthAnything3Image(ControlNode):
 
         # Set preview placeholder
         preview_placeholder = self.params.create_preview_placeholder(input_image_pil.size)
-        self.publish_update_to_parameter("output", self.params.pil_to_image_artifact(preview_placeholder, "depth"))
+        self.publish_update_to_parameter("output", self.params.pil_to_image_artifact(preview_placeholder, self._output_file))
 
         logger.info(f"Processing image ({input_image_pil.size[0]}x{input_image_pil.size[1]})...")
 
@@ -75,7 +78,7 @@ class DepthAnything3Image(ControlNode):
             output_pil = self.params.depth_to_grayscale_pil(depth, original_size)
 
         # Create artifact
-        output_artifact = self.params.pil_to_image_artifact(output_pil, "depth")
+        output_artifact = self.params.pil_to_image_artifact(output_pil, self._output_file)
 
         # Set output
         self.set_parameter_value("output", output_artifact)

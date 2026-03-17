@@ -1,7 +1,6 @@
 import io
 import logging
 import tempfile
-import uuid
 from pathlib import Path
 
 import numpy as np
@@ -11,7 +10,7 @@ from PIL import Image
 from griptape.artifacts import ImageArtifact, ImageUrlArtifact
 from griptape_nodes.exe_types.node_types import BaseNode
 from griptape_nodes.exe_types.param_components.huggingface.huggingface_repo_parameter import HuggingFaceRepoParameter
-from griptape_nodes.retained_mode.griptape_nodes import GriptapeNodes
+from griptape_nodes.exe_types.param_components.project_file_parameter import ProjectFileParameter
 from griptape_nodes.files.file import File, FileLoadError
 
 logger = logging.getLogger("depth_anything_3_library")
@@ -130,18 +129,16 @@ class DepthAnything3Parameters:
             return Image.open(io.BytesIO(image_bytes)).convert("RGB")
         return Image.open(io.BytesIO(artifact.value)).convert("RGB")
 
-    @staticmethod
-    def pil_to_image_artifact(pil_image: Image.Image, prefix: str = "depth") -> ImageUrlArtifact:
-        """Convert a PIL Image to an ImageUrlArtifact using StaticFilesManager."""
+    def pil_to_image_artifact(self, pil_image: Image.Image, output_file_param: ProjectFileParameter) -> ImageUrlArtifact:
+        """Convert a PIL Image to an ImageUrlArtifact using ProjectFileParameter."""
         buffer = io.BytesIO()
         pil_image.save(buffer, format="PNG")
         buffer.seek(0)
         image_bytes = buffer.read()
 
-        filename = f"{prefix}_{uuid.uuid4().hex[:8]}.png"
-        url = GriptapeNodes.StaticFilesManager().save_static_file(image_bytes, filename)
+        saved = output_file_param.build_file().write_bytes(image_bytes)
 
-        return ImageUrlArtifact(value=url)
+        return ImageUrlArtifact(value=saved.location)
 
     @staticmethod
     def create_preview_placeholder(size: tuple[int, int]) -> Image.Image:

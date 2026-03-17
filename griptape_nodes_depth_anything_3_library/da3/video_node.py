@@ -1,6 +1,5 @@
 import logging
 import tempfile
-import uuid
 from pathlib import Path
 
 import numpy as np
@@ -12,8 +11,8 @@ from griptape.artifacts import VideoUrlArtifact
 from griptape_nodes.exe_types.core_types import Parameter, ParameterMode
 from griptape_nodes.exe_types.param_types.parameter_bool import ParameterBool
 from griptape_nodes.exe_types.node_types import AsyncResult, ControlNode
+from griptape_nodes.exe_types.param_components.project_file_parameter import ProjectFileParameter
 from griptape_nodes.files.file import File, FileLoadError
-from griptape_nodes.retained_mode.griptape_nodes import GriptapeNodes
 from da3.parameters import DepthAnything3Parameters
 
 logger = logging.getLogger("depth_anything_3_library")
@@ -70,6 +69,8 @@ class DepthAnything3Video(ControlNode):
                 allowed_modes={ParameterMode.OUTPUT},
             )
         )
+        self._output_file = ProjectFileParameter(node=self, name="output_video", default_filename="depth_video.mp4")
+        self._output_file.add_parameter()
 
     def validate_before_node_run(self) -> list[Exception] | None:
         return self.params.validate_before_node_run()
@@ -148,9 +149,8 @@ class DepthAnything3Video(ControlNode):
 
         try:
             export_frames_to_video(frames, str(temp_file), fps=fps)
-            filename = f"{prefix}_{uuid.uuid4().hex[:8]}.mp4"
-            url = GriptapeNodes.StaticFilesManager().save_static_file(temp_file.read_bytes(), filename)
-            return VideoUrlArtifact(url)
+            saved = self._output_file.build_file().write_bytes(temp_file.read_bytes())
+            return VideoUrlArtifact(saved.location)
         finally:
             if temp_file.exists():
                 temp_file.unlink()
