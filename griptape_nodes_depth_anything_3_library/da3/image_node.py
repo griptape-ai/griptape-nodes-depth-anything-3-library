@@ -1,12 +1,10 @@
 import logging
 
-from griptape.artifacts import ImageUrlArtifact
-
+from da3.parameters import DepthAnything3Parameters
 from griptape_nodes.exe_types.core_types import Parameter, ParameterMode
-from griptape_nodes.exe_types.param_types.parameter_bool import ParameterBool
 from griptape_nodes.exe_types.node_types import AsyncResult, ControlNode
 from griptape_nodes.exe_types.param_components.project_file_parameter import ProjectFileParameter
-from da3.parameters import DepthAnything3Parameters
+from griptape_nodes.exe_types.param_types.parameter_bool import ParameterBool
 
 logger = logging.getLogger("depth_anything_3_library")
 
@@ -64,7 +62,9 @@ class DepthAnything3Image(ControlNode):
 
         # Set preview placeholder
         preview_placeholder = self.params.create_preview_placeholder(input_image_pil.size)
-        self.publish_update_to_parameter("output", self.params.pil_to_image_artifact(preview_placeholder, self._output_file))
+        self.publish_update_to_parameter(
+            "output", self.params.pil_to_image_artifact(preview_placeholder, self._output_file)
+        )
 
         logger.info(f"Processing image ({input_image_pil.size[0]}x{input_image_pil.size[1]})...")
 
