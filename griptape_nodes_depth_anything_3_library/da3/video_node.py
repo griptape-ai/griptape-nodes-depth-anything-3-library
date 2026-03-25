@@ -3,17 +3,15 @@ import tempfile
 from pathlib import Path
 
 import numpy as np
-from moviepy.editor import ImageSequenceClip, VideoFileClip
-from PIL import Image
-
+from da3.parameters import DepthAnything3Parameters
 from griptape.artifacts import VideoUrlArtifact
-
 from griptape_nodes.exe_types.core_types import Parameter, ParameterMode
-from griptape_nodes.exe_types.param_types.parameter_bool import ParameterBool
 from griptape_nodes.exe_types.node_types import AsyncResult, ControlNode
 from griptape_nodes.exe_types.param_components.project_file_parameter import ProjectFileParameter
-from griptape_nodes.files.file import File, FileLoadError
-from da3.parameters import DepthAnything3Parameters
+from griptape_nodes.exe_types.param_types.parameter_bool import ParameterBool
+from griptape_nodes.files.file import File
+from moviepy.editor import ImageSequenceClip, VideoFileClip
+from PIL import Image
 
 logger = logging.getLogger("depth_anything_3_library")
 

@@ -5,7 +5,6 @@ import sys
 from pathlib import Path
 
 import pygit2
-
 from griptape_nodes.node_library.advanced_node_library import AdvancedNodeLibrary
 from griptape_nodes.node_library.library_registry import Library, LibrarySchema
 
@@ -123,18 +122,13 @@ class DepthAnything3LibraryAdvanced(AdvancedNodeLibrary):
         """Ensure pip is installed in the library venv."""
         venv_python = self._get_venv_python_path()
 
-        result = subprocess.run(
-            [str(venv_python), "-m", "pip", "--version"],
-            capture_output=True
-        )
+        result = subprocess.run([str(venv_python), "-m", "pip", "--version"], capture_output=True)
         if result.returncode == 0:
             logger.info("pip is available in library venv")
             return
 
         logger.info("pip not found in library venv, installing with ensurepip...")
-        subprocess.check_call([
-            str(venv_python), "-m", "ensurepip", "--upgrade"
-        ])
+        subprocess.check_call([str(venv_python), "-m", "ensurepip", "--upgrade"])
         logger.info("pip installed successfully")
 
     def _install_depth_anything(self, depth_anything_path: Path) -> None:
@@ -143,17 +137,11 @@ class DepthAnything3LibraryAdvanced(AdvancedNodeLibrary):
 
         self._ensure_pip_installed()
 
-        result = subprocess.run(
-            [str(venv_python), "-c", "import depth_anything_3"],
-            capture_output=True
-        )
+        result = subprocess.run([str(venv_python), "-c", "import depth_anything_3"], capture_output=True)
         if result.returncode == 0:
             logger.info("depth_anything_3 already installed in library venv")
             return
 
         logger.info(f"Installing depth_anything_3 from {depth_anything_path}...")
-        subprocess.check_call([
-            str(venv_python), "-m", "pip", "install",
-            str(depth_anything_path)
-        ])
+        subprocess.check_call([str(venv_python), "-m", "pip", "install", str(depth_anything_path)])
         logger.info("depth_anything_3 installed successfully")
