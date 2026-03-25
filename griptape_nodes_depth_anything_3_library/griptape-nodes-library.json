@@ -5,7 +5,7 @@
   "metadata": {
     "author": "Griptape, Inc.",
     "description": "Depth Anything 3 depth estimation for Griptape Nodes.",
-    "library_version": "0.1.0",
+    "library_version": "0.2.0",
     "engine_version": "0.75.0",
     "tags": [
       "Griptape",
@@ -17,8 +17,8 @@
     "dependencies": {
       "pip_dependencies": [
         "pygit2",
-        "torch>=2",
-        "torchvision",
+        "torch==2.7.0",
+        "torchvision==0.22.0",
         "addict"
       ],
       "pip_install_flags": [
