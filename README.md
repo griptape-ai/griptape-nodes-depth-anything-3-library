@@ -1,6 +1,6 @@
 # Griptape Nodes: Depth Anything 3 Library
 
-A [Griptape Nodes](https://www.griptapenodes.com/) library for monocular depth estimation using [Depth Anything 3](https://github.com/ByteDance-Seed/Depth-Anything-3/blob/main/requirements.txt) models.
+A [Griptape Nodes](https://www.griptapenodes.com/) library for monocular depth estimation using [Depth Anything 3](https://github.com/ByteDance-Seed/Depth-Anything-3) models.
 
 ## Overview
 
