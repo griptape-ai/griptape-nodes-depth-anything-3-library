@@ -16,7 +16,6 @@
     ],
     "dependencies": {
       "pip_dependencies": [
-        "pygit2",
         "torch==2.7.0",
         "torchvision==0.22.0",
         "addict"
