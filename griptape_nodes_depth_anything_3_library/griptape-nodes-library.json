@@ -5,7 +5,7 @@
   "metadata": {
     "author": "Griptape, Inc.",
     "description": "Depth Anything 3 depth estimation for Griptape Nodes.",
-    "library_version": "0.2.1",
+    "library_version": "0.3.0",
     "engine_version": "0.75.0",
     "tags": [
       "Griptape",
