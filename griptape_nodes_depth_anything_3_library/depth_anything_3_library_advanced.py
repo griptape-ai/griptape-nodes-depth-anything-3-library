@@ -4,7 +4,6 @@ import subprocess
 import sys
 from pathlib import Path
 
-import pygit2
 from griptape_nodes.node_library.advanced_node_library import AdvancedNodeLibrary
 from griptape_nodes.node_library.library_registry import Library, LibrarySchema
 
@@ -76,16 +75,6 @@ class DepthAnything3LibraryAdvanced(AdvancedNodeLibrary):
         """Get the library root directory."""
         return Path(__file__).parent
 
-    def _update_submodules_recursive(self, repo_path: Path) -> None:
-        """Recursively update and initialize all submodules."""
-        repo = pygit2.Repository(str(repo_path))
-        repo.submodules.update(init=True)
-
-        for submodule in repo.submodules:
-            submodule_path = repo_path / submodule.path
-            if submodule_path.exists() and (submodule_path / ".git").exists():
-                self._update_submodules_recursive(submodule_path)
-
     def _init_depth_anything_submodule(self) -> Path:
         """Initialize the depth-anything-3 git submodule."""
         library_root = self._get_library_root()
@@ -95,8 +84,11 @@ class DepthAnything3LibraryAdvanced(AdvancedNodeLibrary):
             logger.info("depth-anything-3 submodule already initialized")
             return depth_anything_submodule_dir
 
+        # The git CLI rather than pygit2: the engine dropped pygit2 (its bundled TLS trust
+        # store breaks on some platforms) and requires git on PATH, so it is the one tool
+        # guaranteed to be here.
         git_repo_root = library_root.parent
-        self._update_submodules_recursive(git_repo_root)
+        subprocess.check_call(["git", "-C", str(git_repo_root), "submodule", "update", "--init", "--recursive"])
 
         if not depth_anything_submodule_dir.exists() or not any(depth_anything_submodule_dir.iterdir()):
             raise RuntimeError(
