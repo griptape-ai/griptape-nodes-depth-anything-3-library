@@ -10,7 +10,6 @@ from griptape_nodes.exe_types.node_types import AsyncResult, ControlNode
 from griptape_nodes.exe_types.param_components.project_file_parameter import ProjectFileParameter
 from griptape_nodes.exe_types.param_types.parameter_bool import ParameterBool
 from griptape_nodes.files.file import File
-from moviepy.editor import ImageSequenceClip, VideoFileClip
 from PIL import Image
 
 logger = logging.getLogger("depth_anything_3_library")
@@ -18,6 +17,9 @@ logger = logging.getLogger("depth_anything_3_library")
 
 def load_video_frames(video_path: str) -> tuple[list[Image.Image], float]:
     """Load video frames as PIL Images and return fps."""
+    # Deferred: moviepy is an execution-time dependency (see pip_dependencies_exec).
+    from moviepy.editor import VideoFileClip
+
     clip = VideoFileClip(video_path)
     fps = clip.fps
     frames = []
@@ -29,6 +31,8 @@ def load_video_frames(video_path: str) -> tuple[list[Image.Image], float]:
 
 def export_frames_to_video(frames: list[Image.Image], output_path: str, fps: float = 16) -> None:
     """Export PIL Image frames to video file."""
+    from moviepy.editor import ImageSequenceClip
+
     # Convert PIL Images to numpy arrays
     frame_arrays = [np.array(frame) for frame in frames]
     clip = ImageSequenceClip(frame_arrays, fps=fps)

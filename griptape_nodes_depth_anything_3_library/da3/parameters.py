@@ -4,7 +4,6 @@ import tempfile
 from pathlib import Path
 
 import numpy as np
-import torch
 from griptape.artifacts import ImageArtifact, ImageUrlArtifact
 from griptape_nodes.exe_types.node_types import BaseNode
 from griptape_nodes.exe_types.param_components.huggingface.huggingface_repo_parameter import HuggingFaceRepoParameter
@@ -50,6 +49,10 @@ class DepthAnything3Parameters:
     @staticmethod
     def get_device() -> str:
         """Get the appropriate device for inference."""
+        # Deferred: torch is an execution-time dependency, so it is absent from a machine that
+        # only edits workflows. Every caller of this is on an execution path.
+        import torch
+
         if torch.cuda.is_available():
             return "cuda"
         elif torch.backends.mps.is_available():
@@ -65,6 +68,8 @@ class DepthAnything3Parameters:
         if DepthAnything3Parameters._model is not None and DepthAnything3Parameters._current_model_name == model_id:
             logger.info(f"Using cached model: {model_id}")
             return DepthAnything3Parameters._model
+
+        import torch
 
         logger.info(f"Loading Depth Anything 3 model: {model_id}")
         device = torch.device(self.get_device())
@@ -82,6 +87,8 @@ class DepthAnything3Parameters:
         Returns:
             Tuple of (depth array, original size)
         """
+        import torch
+
         model = self.load_model()
         original_size = pil_image.size
 
