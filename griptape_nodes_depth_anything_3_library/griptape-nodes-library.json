@@ -27,7 +27,8 @@
                 "torch==2.7.0",
                 "torchvision==0.22.0",
                 "addict",
-                "moviepy"
+                "moviepy",
+                "depth-anything-3 @ git+https://github.com/ByteDance-Seed/depth-anything-3.git@2c21ea849ceec7b469a3e62ea0c0e270afc3281a"
             ]
         },
         "resources": {
