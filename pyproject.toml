@@ -26,7 +26,15 @@ exec = [
     "torchvision==0.22.0",
     "addict",
     "moviepy",
+    # Upstream declares xformers, which has no macOS wheel and builds from source. The model
+    # imports it behind a try/except with a pure-torch fallback, so this installs on Windows
+    # and CUDA Linux and is expected to fail the build on macOS.
+    "depth-anything-3 @ git+https://github.com/ByteDance-Seed/depth-anything-3.git@2c21ea849ceec7b469a3e62ea0c0e270afc3281a",
 ]
+# The exec extra carries a git direct reference, which hatchling rejects by default.
+[tool.hatch.metadata]
+allow-direct-references = true
+
 [build-system]
 requires = ["hatchling"]
 build-backend = "hatchling.build"
