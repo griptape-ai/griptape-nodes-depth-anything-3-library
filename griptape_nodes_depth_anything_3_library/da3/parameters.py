@@ -4,7 +4,6 @@ import tempfile
 from pathlib import Path
 
 import numpy as np
-import torch
 from griptape.artifacts import ImageArtifact, ImageUrlArtifact
 from griptape_nodes.exe_types.node_types import BaseNode
 from griptape_nodes.exe_types.param_components.huggingface.huggingface_repo_parameter import HuggingFaceRepoParameter
@@ -47,14 +46,16 @@ class DepthAnything3Parameters:
     def get_model_id(self) -> str:
         return self._node.get_parameter_value("model")
 
-    @staticmethod
-    def get_device() -> str:
-        """Get the appropriate device for inference."""
-        if torch.cuda.is_available():
-            return "cuda"
-        elif torch.backends.mps.is_available():
-            return "mps"
-        return "cpu"
+    def get_device(self) -> str:
+        """The device to run inference on, as chosen by the engine.
+
+        Asked rather than computed. The engine detects the machine's compute backends without
+        importing a framework, so this needs no torch -- which matters because torch is an
+        execution-time dependency and this class is imported wherever the node is merely built.
+        It also means the device agrees with what the engine reports elsewhere, rather than being
+        a second opinion from a differently-built torch.
+        """
+        return self._node.execution_device
 
     def load_model(self):
         """Load the Depth Anything 3 model from HuggingFace Hub."""
@@ -65,6 +66,8 @@ class DepthAnything3Parameters:
         if DepthAnything3Parameters._model is not None and DepthAnything3Parameters._current_model_name == model_id:
             logger.info(f"Using cached model: {model_id}")
             return DepthAnything3Parameters._model
+
+        import torch
 
         logger.info(f"Loading Depth Anything 3 model: {model_id}")
         device = torch.device(self.get_device())
@@ -82,6 +85,8 @@ class DepthAnything3Parameters:
         Returns:
             Tuple of (depth array, original size)
         """
+        import torch
+
         model = self.load_model()
         original_size = pil_image.size
 
