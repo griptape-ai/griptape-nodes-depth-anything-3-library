@@ -74,6 +74,11 @@ implies rather than writing it down: `opencv-python` needs no pin because the mo
 not that kind of inference and has to stay -- this library calls the OpenCV 4 `cv2` API, and
 without the bound the set resolves to opencv 5 whenever nothing else caps it.
 
+Resolving on macOS is not a substitute. The model package declares `xformers`, which publishes no
+macOS wheel and falls back to building from source, so `.venv-exec` is expected to fail to build
+there. The model imports `xformers` behind a `try`/`except` with a pure-torch fallback, so it is
+upstream-mandatory but not actually required to run.
+
 ## CI
 
 The CI workflow runs `make check` on every pull request and push to `main`. PRs must pass all checks before merging.
