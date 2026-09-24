@@ -79,7 +79,12 @@ install/core: deps/sync ## Install core dependencies.
 
 .PHONY: install/all
 install/all: deps/sync ## Install all dependencies.
-	@uv sync --all-groups --all-extras
+	@uv sync --all-groups
+
+.PHONY: install/exec
+install/exec: ## Install execution-time dependencies into a local scratch venv.
+	@# Never .venv-exec: the engine owns that directory and builds it from pip_dependencies_exec.
+	@UV_PROJECT_ENVIRONMENT=.venv-exec-local uv sync --extra exec
 
 .PHONY: install/dev
 install/dev: ## Install dev dependencies.
