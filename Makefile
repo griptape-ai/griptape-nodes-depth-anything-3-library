@@ -56,18 +56,18 @@ version/publish: ## Create and push git tags.
 	@git push -f origin stable
 
 .PHONY: deps/sync
-deps/sync: ## Sync pip_dependencies and pip_dependencies_exec in the library JSON from pyproject.toml.
+deps/sync: ## Sync pip_dependencies in the library JSON from pyproject.toml.
+	@# pip_dependencies_exec is authored in the manifest and has no pyproject counterpart, so it
+	@# is left untouched here. Deriving it from an absent extra would silently empty it.
 	@uv run python -c "\
 import tomllib, json; \
 pyproject = tomllib.load(open('pyproject.toml', 'rb')); \
 edit = [d for d in pyproject['project']['dependencies'] if not d.startswith('griptape-nodes')]; \
-execution = pyproject['project'].get('optional-dependencies', {}).get('exec', []); \
 lib = json.load(open('$(LIBRARY_JSON)')); \
 deps = lib['metadata'].setdefault('dependencies', {}); \
 deps['pip_dependencies'] = edit; \
-deps['pip_dependencies_exec'] = execution; \
 open('$(LIBRARY_JSON)', 'w').write(json.dumps(lib, indent=4) + '\n'); \
-print(f'Synced {len(edit)} edit-time and {len(execution)} execution dependencies to $(LIBRARY_JSON)')"
+print(f'Synced {len(edit)} edit-time dependencies to $(LIBRARY_JSON)')"
 
 .PHONY: install
 install: ## Install all dependencies.
@@ -80,11 +80,6 @@ install/core: deps/sync ## Install core dependencies.
 .PHONY: install/all
 install/all: deps/sync ## Install all dependencies.
 	@uv sync --all-groups
-
-.PHONY: install/exec
-install/exec: ## Install execution-time dependencies into a local scratch venv.
-	@# Never .venv-exec: the engine owns that directory and builds it from pip_dependencies_exec.
-	@UV_PROJECT_ENVIRONMENT=.venv-exec-local uv sync --extra exec
 
 .PHONY: install/dev
 install/dev: ## Install dev dependencies.
