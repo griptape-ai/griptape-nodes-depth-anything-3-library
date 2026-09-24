@@ -8,10 +8,19 @@ This project uses [uv](https://docs.astral.sh/uv/) for dependency management. In
 make install/dev
 ```
 
-To install all dependencies including core and extras:
+To install all dependency groups:
 
 ```bash
 make install
+```
+
+This deliberately excludes the `exec` extra. Those packages are execution-time only: the engine
+installs them into `.venv-exec` and puts them on `sys.path` solely inside this library's worker
+process, so installing them into the default venv would hide a missing edit-time declaration.
+To get them locally for debugging, use a separate venv:
+
+```bash
+make install/exec
 ```
 
 ## Makefile Targets
@@ -44,7 +53,7 @@ make fix
 
 ### Dependency Sync
 
-The `pip_dependencies` field in the library JSON is kept in sync with `pyproject.toml`. Run this after adding or removing dependencies:
+The `pip_dependencies` and `pip_dependencies_exec` fields in the library JSON are kept in sync with `pyproject.toml`: the former from `[project] dependencies`, the latter from the `exec` extra. Run this after adding or removing dependencies:
 
 ```bash
 make deps/sync
