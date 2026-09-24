@@ -14,14 +14,11 @@ To install all dependency groups:
 make install
 ```
 
-This deliberately excludes the `exec` extra. Those packages are execution-time only: the engine
-installs them into `.venv-exec` and puts them on `sys.path` solely inside this library's worker
-process, so installing them into the default venv would hide a missing edit-time declaration.
-To get them locally for debugging, use a separate venv:
-
-```bash
-make install/exec
-```
+This installs the edit-time dependencies only. The heavy packages this library runs on are
+declared separately, in the manifest's `pip_dependencies_exec`, and are deliberately absent from
+`pyproject.toml`: the engine installs them into `.venv-exec` and puts them on `sys.path` solely
+inside this library's worker process. Keeping them out of the default venv is what makes a missing
+edit-time declaration fail here rather than in a user's worker.
 
 ## Makefile Targets
 
@@ -53,13 +50,27 @@ make fix
 
 ### Dependency Sync
 
-The `pip_dependencies` and `pip_dependencies_exec` fields in the library JSON are kept in sync with `pyproject.toml`: the former from `[project] dependencies`, the latter from the `exec` extra. Run this after adding or removing dependencies:
+The `pip_dependencies` field in the library JSON is kept in sync with `[project] dependencies`. Run this after adding or removing an edit-time dependency:
 
 ```bash
 make deps/sync
 ```
 
 This is also run automatically as part of `make install/core` and `make install/all`.
+
+`pip_dependencies_exec` is edited in the manifest by hand and is not derived from anything, so
+`deps/sync` leaves it alone. When changing it, resolve the merged set the way the engine will,
+targeting the platform the library runs on rather than your own:
+
+```bash
+uv pip compile --python-platform x86_64-pc-windows-msvc --python-version 3.12 \
+  --index-strategy unsafe-best-match --extra-index-url https://download.pytorch.org/whl/cu128 -
+```
+
+Feed it every entry from `pip_dependencies` and `pip_dependencies_exec` together. Leave a spec
+loose unless a version is genuinely required. `opencv-python` is held at 4.11.0.86 because the
+model package pins `numpy<2` while opencv 4.12 and later require `numpy>=2`; with both in the set
+the resolver picks 4.11.0.86 by itself, so the pin records that outcome rather than overriding it.
 
 ## CI
 
