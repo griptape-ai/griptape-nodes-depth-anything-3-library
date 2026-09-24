@@ -6,7 +6,7 @@
         "author": "Griptape, Inc.",
         "description": "Depth Anything 3 depth estimation for Griptape Nodes.",
         "library_version": "0.3.0",
-        "engine_version": "0.99.0",
+        "engine_version": "0.75.0",
         "tags": [
             "Griptape",
             "AI",
@@ -26,8 +26,9 @@
             "pip_dependencies_exec": [
                 "torch==2.7.0",
                 "torchvision==0.22.0",
-                "addict",
-                "moviepy"
+                "addict==2.4.0",
+                "moviepy==1.0.3",
+                "opencv-python==4.11.0.86"
             ]
         },
         "resources": {
