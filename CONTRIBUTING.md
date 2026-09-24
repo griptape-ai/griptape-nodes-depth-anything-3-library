@@ -68,9 +68,11 @@ uv pip compile --python-platform x86_64-pc-windows-msvc --python-version 3.12 \
 ```
 
 Feed it every entry from `pip_dependencies` and `pip_dependencies_exec` together. Leave a spec
-loose unless a version is genuinely required. `opencv-python` is held at 4.11.0.86 because the
-model package pins `numpy<2` while opencv 4.12 and later require `numpy>=2`; with both in the set
-the resolver picks 4.11.0.86 by itself, so the pin records that outcome rather than overriding it.
+loose unless a version is genuinely required, and let the resolver find the version a constraint
+implies rather than writing it down: `opencv-python` needs no pin because the model package's
+`numpy<2` already forces 4.11.0.86, opencv 4.12 and later requiring `numpy>=2`. Its `<5` bound is
+not that kind of inference and has to stay -- this library calls the OpenCV 4 `cv2` API, and
+without the bound the set resolves to opencv 5 whenever nothing else caps it.
 
 Resolving on macOS is not a substitute. The model package declares `xformers`, which publishes no
 macOS wheel and falls back to building from source, so `.venv-exec` is expected to fail to build
