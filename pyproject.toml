@@ -8,29 +8,32 @@ authors = [
 readme = "README.md"
 requires-python = ">=3.12"
 dependencies = [
-    "griptape-nodes",
     "numpy",
     "Pillow",
 ]
 
 [tool.uv.sources]
-griptape-nodes = { git = "https://github.com/griptape-ai/griptape-nodes", rev = "main" }
+griptape-nodes-engine = { git = "https://github.com/griptape-ai/griptape-nodes-engine", rev = "main" }
 
-
-[project.optional-dependencies]
 # Execution-time only: the engine installs these into <library>/.venv-exec and puts
 # them on sys.path solely inside this library's worker process. They are absent from
 # the machine that only edits workflows, which is the point.
+[project.optional-dependencies]
 exec = [
     "torch==2.7.0",
     "torchvision==0.22.0",
-    "addict",
-    "moviepy",
+    "addict==2.4.0",
+    # 1.0.3 is the last release carrying `moviepy.editor`, and is what depth-anything-3 pins.
+    "moviepy==1.0.3",
+    # 4.11.0.86 is the last release that permits numpy 1.x. depth-anything-3 pins numpy<2,
+    # so 4.12 and later, which require numpy>=2, cannot resolve alongside the model.
+    "opencv-python==4.11.0.86",
     # Upstream declares xformers, which has no macOS wheel and builds from source. The model
     # imports it behind a try/except with a pure-torch fallback, so this installs on Windows
     # and CUDA Linux and is expected to fail the build on macOS.
     "depth-anything-3 @ git+https://github.com/ByteDance-Seed/depth-anything-3.git@2c21ea849ceec7b469a3e62ea0c0e270afc3281a",
 ]
+
 # The exec extra carries a git direct reference, which hatchling rejects by default.
 [tool.hatch.metadata]
 allow-direct-references = true
@@ -40,7 +43,7 @@ requires = ["hatchling"]
 build-backend = "hatchling.build"
 
 [dependency-groups]
-dev = ["pyright>=1.1.396", "pytest-asyncio>=0.21.0", "ruff>=0.8.0", "pytest"]
+dev = ["pyright>=1.1.396", "pytest-asyncio>=0.21.0", "ruff>=0.8.0", "pytest", "griptape-nodes-engine"]
 
 [tool.ruff]
 line-length = 120
