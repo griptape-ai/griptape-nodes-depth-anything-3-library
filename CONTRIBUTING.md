@@ -8,11 +8,17 @@ This project uses [uv](https://docs.astral.sh/uv/) for dependency management. In
 make install/dev
 ```
 
-To install all dependencies including core and extras:
+To install all dependency groups:
 
 ```bash
 make install
 ```
+
+This installs the edit-time dependencies only. The heavy packages this library runs on are
+declared separately, in the manifest's `pip_dependencies_exec`, and are deliberately absent from
+`pyproject.toml`: the engine installs them into `.venv-exec` and puts them on `sys.path` solely
+inside this library's worker process. Keeping them out of the default venv is what makes a missing
+edit-time declaration fail here rather than in a user's worker.
 
 ## Makefile Targets
 
@@ -44,13 +50,34 @@ make fix
 
 ### Dependency Sync
 
-The `pip_dependencies` field in the library JSON is kept in sync with `pyproject.toml`. Run this after adding or removing dependencies:
+The `pip_dependencies` field in the library JSON is kept in sync with `[project] dependencies`. Run this after adding or removing an edit-time dependency:
 
 ```bash
 make deps/sync
 ```
 
 This is also run automatically as part of `make install/core` and `make install/all`.
+
+`pip_dependencies_exec` is edited in the manifest by hand and is not derived from anything, so
+`deps/sync` leaves it alone. When changing it, resolve the merged set the way the engine will,
+targeting the platform the library runs on rather than your own:
+
+```bash
+uv pip compile --python-platform x86_64-pc-windows-msvc --python-version 3.12 \
+  --index-strategy unsafe-best-match --extra-index-url https://download.pytorch.org/whl/cu128 -
+```
+
+Feed it every entry from `pip_dependencies` and `pip_dependencies_exec` together. Leave a spec
+loose unless a version is genuinely required, and let the resolver find the version a constraint
+implies rather than writing it down: `opencv-python` needs no pin because the model package's
+`numpy<2` already forces 4.11.0.86, opencv 4.12 and later requiring `numpy>=2`. Its `<5` bound is
+not that kind of inference and has to stay -- this library calls the OpenCV 4 `cv2` API, and
+without the bound the set resolves to opencv 5 whenever nothing else caps it.
+
+Resolving on macOS is not a substitute. The model package declares `xformers`, which publishes no
+macOS wheel and falls back to building from source, so `.venv-exec` is expected to fail to build
+there. The model imports `xformers` behind a `try`/`except` with a pure-torch fallback, so it is
+upstream-mandatory but not actually required to run.
 
 ## CI
 

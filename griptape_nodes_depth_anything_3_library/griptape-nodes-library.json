@@ -1,12 +1,12 @@
 {
     "name": "Griptape Nodes Depth Anything 3 Library",
-    "library_schema_version": "0.3.0",
+    "library_schema_version": "0.12.0",
     "advanced_library_path": "depth_anything_3_library_advanced.py",
     "metadata": {
         "author": "Griptape, Inc.",
         "description": "Depth Anything 3 depth estimation for Griptape Nodes.",
-        "library_version": "0.3.0",
-        "engine_version": "0.75.0",
+        "library_version": "0.4.0",
+        "engine_version": "0.102.0",
         "tags": [
             "Griptape",
             "AI",
@@ -16,13 +16,22 @@
         ],
         "dependencies": {
             "pip_dependencies": [
-                "torch==2.7.0",
-                "torchvision==0.22.0",
-                "addict"
+                "numpy",
+                "Pillow"
             ],
             "pip_install_flags": [
                 "--extra-index-url",
-                "https://download.pytorch.org/whl/cu128"
+                "https://download.pytorch.org/whl/cu128",
+                "--index-strategy",
+                "unsafe-best-match"
+            ],
+            "pip_dependencies_exec": [
+                "torch==2.7.0",
+                "torchvision==0.22.0",
+                "addict==2.4.0",
+                "moviepy==1.0.3",
+                "opencv-python>=4.9.0.80,<5",
+                "depth-anything-3 @ git+https://github.com/ByteDance-Seed/depth-anything-3.git@2c21ea849ceec7b469a3e62ea0c0e270afc3281a"
             ]
         },
         "resources": {

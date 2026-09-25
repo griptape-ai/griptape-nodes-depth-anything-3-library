@@ -1,6 +1,6 @@
 [project]
 name = "griptape_nodes_depth_anything_3_library"
-version = "0.1.0"
+version = "0.4.0"
 description = "Depth Anything 3 integration for Griptape Nodes"
 authors = [
     {name = "Griptape, Inc.", email = "hello@griptape.ai"}
@@ -8,10 +8,17 @@ authors = [
 readme = "README.md"
 requires-python = ">=3.12"
 dependencies = [
+    "numpy",
+    "Pillow",
 ]
 
 [tool.uv.sources]
-griptape-nodes-engine = { git = "https://github.com/griptape-ai/griptape-nodes-engine", rev = "main" }
+griptape-nodes-engine = { git = "https://github.com/griptape-ai/griptape-nodes-engine", rev = "latest" }
+
+# The execution-time set lives only in the library manifest's pip_dependencies_exec. It is
+# deliberately not an extra: uv co-resolves every extra with the dev group, so an execution
+# set that is not co-satisfiable with the engine's own closure would break `uv lock` here,
+# while the engine installs it additively into <library>/.venv-exec and never needs that.
 
 [build-system]
 requires = ["hatchling"]

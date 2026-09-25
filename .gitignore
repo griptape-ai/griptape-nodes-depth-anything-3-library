@@ -1,4 +1,5 @@
 .env
 .venv
+.venv-exec
 griptape_nodes_depth_anything_3_library/__pycache__/
 griptape_nodes_depth_anything_3_library/da3/__pycache__/
