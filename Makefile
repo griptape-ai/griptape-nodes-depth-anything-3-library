@@ -58,7 +58,7 @@ version/publish: ## Create and push git tags.
 .PHONY: deps/sync
 deps/sync: ## Sync pip_dependencies in the library JSON from pyproject.toml.
 	@# pip_dependencies_exec is authored in the manifest and has no pyproject counterpart, so it
-	@# is left untouched here. Deriving it from an absent extra would silently empty it.
+	@# is left untouched here.
 	@uv run python -c "\
 import tomllib, json; \
 pyproject = tomllib.load(open('pyproject.toml', 'rb')); \

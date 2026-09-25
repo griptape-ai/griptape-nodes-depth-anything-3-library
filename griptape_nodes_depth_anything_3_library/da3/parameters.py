@@ -49,11 +49,8 @@ class DepthAnything3Parameters:
     def get_device(self) -> str:
         """The device to run inference on, as chosen by the engine.
 
-        Asked rather than computed. The engine detects the machine's compute backends without
-        importing a framework, so this needs no torch -- which matters because torch is an
-        execution-time dependency and this class is imported wherever the node is merely built.
-        It also means the device agrees with what the engine reports elsewhere, rather than being
-        a second opinion from a differently-built torch.
+        Asking the engine keeps torch out of this module, which is imported wherever a node is
+        built, not just where it executes.
         """
         return self._node.execution_device
 
