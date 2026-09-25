@@ -1,6 +1,6 @@
 [project]
 name = "griptape_nodes_depth_anything_3_library"
-version = "0.1.0"
+version = "0.4.0"
 description = "Depth Anything 3 integration for Griptape Nodes"
 authors = [
     {name = "Griptape, Inc.", email = "hello@griptape.ai"}
