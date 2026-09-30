@@ -57,14 +57,17 @@ version/publish: ## Create and push git tags.
 
 .PHONY: deps/sync
 deps/sync: ## Sync pip_dependencies in the library JSON from pyproject.toml.
+	@# pip_dependencies_exec is authored in the manifest and has no pyproject counterpart, so it
+	@# is left untouched here.
 	@uv run python -c "\
 import tomllib, json; \
 pyproject = tomllib.load(open('pyproject.toml', 'rb')); \
-deps = [d for d in pyproject['project']['dependencies'] if not d.startswith('griptape-nodes')]; \
+edit = [d for d in pyproject['project']['dependencies'] if not d.startswith('griptape-nodes')]; \
 lib = json.load(open('$(LIBRARY_JSON)')); \
-lib['metadata'].setdefault('dependencies', {})['pip_dependencies'] = deps; \
+deps = lib['metadata'].setdefault('dependencies', {}); \
+deps['pip_dependencies'] = edit; \
 open('$(LIBRARY_JSON)', 'w').write(json.dumps(lib, indent=4) + '\n'); \
-print(f'Synced {len(deps)} dependencies to $(LIBRARY_JSON)')"
+print(f'Synced {len(edit)} edit-time dependencies to $(LIBRARY_JSON)')"
 
 .PHONY: install
 install: ## Install all dependencies.
@@ -76,7 +79,7 @@ install/core: deps/sync ## Install core dependencies.
 
 .PHONY: install/all
 install/all: deps/sync ## Install all dependencies.
-	@uv sync --all-groups --all-extras
+	@uv sync --all-groups
 
 .PHONY: install/dev
 install/dev: ## Install dev dependencies.
