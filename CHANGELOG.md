@@ -10,4 +10,4 @@ the `library_version` in `griptape_nodes_depth_anything_3_library/griptape-nodes
 
 <!-- Entries go in changelog.d/, one file each. See changelog.d/README.md. -->
 
-[Unreleased]: https://github.com/griptape-ai/griptape-nodes-depth-anything-3-library/compare/v0.4.0...HEAD
+[Unreleased]: https://github.com/griptape-ai/griptape-nodes-depth-anything-3-library/compare/de8dff99100f1da3fcb0dd6a1e1c3955d158ec79...HEAD
